@@ -45,4 +45,4 @@ This POC has some dependencies:
 5. shared_preferences: For accessing Shared Preferences / NSUserDefaults
 
 ## PDF Submission Document
-More details related to the submission can be found in my submission PDF named [YHJ-VimigoTechTestSubmission.pdf](https://www.google.com)
+More details related to the submission can be found in my submission PDF named [YHJ-VimigoTechTestSubmission.pdf](YeohHuiJia-FinalSubmission.pdf)
