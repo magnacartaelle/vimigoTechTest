@@ -9,6 +9,7 @@ In addition, I have included a PDF document elaborating a little more with regar
 ## The POC Application
 The application is written in **Dart for Flutter**. However, testing is done mostly on iOS due to my lack of an Android device.
 It essentially consist of:
+<br><br>
 **1. A task list**
 - From the task list screen, the application wlil attempt to pull the latest via API. Else, it will opt to take the task list via local storage
 - The 'reload' button forces a call to get the latest data via API (similar to a pull to refresh behaviour) without clearing the local copy
@@ -22,11 +23,11 @@ It essentially consist of:
 - As long as the app remains in the foreground, the app will attempt to sync and pull the latest changes via API
 - The pulling will occur every 1 minute (can be adjusted).
 
-**Background data fetching**
+**4. Background data fetching**
 - If the app is pushed to the background, the app will attempt to sync and pull the latest changes via API
 - The fetching occur 15 minutes (limitation on Android platform).
 
-**Pending Update List**
+**5. Pending Update List**
 - If the app loses internet connectivity when user attempts to update a task, it is placed into a pending list
 - Once the app regains internet connectivity, the pending list is iterated through and updates are pushed to the server one by one. 
 
