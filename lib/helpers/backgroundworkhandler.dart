@@ -1,6 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:background_fetch/background_fetch.dart' as bgfetch;
 
+///This class primarily deals with scheduling and managing background fetching setups
+///
+///At present, it caters to only ONE taskName / ID which is 'com.transistorsoft.fetch'
+///The class also deals directly with the background_fetch package which wraps and manages
+///native background fetching / processing. 
+///This class is also made as a singleton
 class BackgroundWorkHandler {
   static final BackgroundWorkHandler _instance =
       BackgroundWorkHandler._internal();
@@ -18,6 +24,7 @@ class BackgroundWorkHandler {
     WidgetsFlutterBinding.ensureInitialized();
   }
 
+///Register a background task with the corresponding callback upon background fetch trigger
   Future<void> registerBackgroundTask(Function callback) async {
     int status = await bgfetch.BackgroundFetch.configure(
         bgfetch.BackgroundFetchConfig(
@@ -39,22 +46,17 @@ class BackgroundWorkHandler {
     print("Background fetch configured and started with status $status");
   }
 
+///Reschedules a background task manually using the same callback
   Future<void> repeatBackgroundTask() async {
     bgfetch.BackgroundFetch.start().then((status) {
       print("Background fetch restarted with status $status");
     });
   }
 
+//Unschedules and stops a background task
   Future<void> unregisterBackgroundTask() async {
     bgfetch.BackgroundFetch.stop(_taskName).then((status) {
       print("Background fetch stopped with status $status");
     });
-  }
-
-  void callbackDispatcher(String taskname) async {
-    if (_tasks.containsKey(taskname)) {
-      _tasks['taskName'];
-      bgfetch.BackgroundFetch.finish(taskname);
-    }
   }
 }

@@ -4,6 +4,10 @@ import '../models/taskmodel.dart';
 import '../styles.dart' as styles;
 import '../helpers/tasksyncmanager.dart';
 
+
+///Task details page that you can update the status of the task.
+///
+///Task details transitions from: Not started -> In progress -> Resolved -> Closed
 class TaskDetailsPage extends StatelessWidget {
   const TaskDetailsPage({required this.selectedTask, Key? key})
       : super(key: key);

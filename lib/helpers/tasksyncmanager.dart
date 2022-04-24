@@ -9,15 +9,23 @@ import 'checkconnectivity.dart';
 import '../models/taskmodel.dart';
 import '../apiconstants.dart' as apiconstants;
 
+///Class that deals with tasks entirely. Basically a middle-man that interacts with the front end
+///and the helpers
+///
+///Essentially calls APIs, talks to the localstorage helper, background handler and check connectivity as well.
+///Also a singleton
 class TaskSyncManager {
   static final TaskSyncManager _instance = TaskSyncManager._internal();
 
   late final localTaskList = <TaskModel>[];
   late final _pendingSyncList = <String>[];
 
+  //To prevent...race conditions
   bool _isSyncing = false;
 
   final _localStorage = LocalStorageHandler();
+
+  //Some const names used within this class only
   final _tableName = "tasks";
   final _pendingUpdatesName = "pendingtasks";
 
@@ -32,7 +40,7 @@ class TaskSyncManager {
         .initialiseTable(_tableName)
         .then((value) => getTaskList()));
 
-//get shared prefs here
+    //Extract shared prefs here for any previously unupdated tasks from the device.
     final sharedPrefs = await SharedPreferences.getInstance();
     final pendingPrefs =
         sharedPrefs.getStringList(_pendingUpdatesName) ?? <String>[];
@@ -48,6 +56,7 @@ class TaskSyncManager {
     localTaskList.addAll(taskList);
   }
 
+  //Load the task list via API
   Future<void> loadRemoteTaskList() async {
     if (_isSyncing) {
       return Future.value();
@@ -84,20 +93,18 @@ class TaskSyncManager {
     final itemsToRemove = <TaskModel>[];
     itemsToRemove.addAll(localList);
 
-//Do the comparison
-    //If remote = 0, local should result in 0
-    //If local is 0. local may not result in 0. Need to check remote.
+  //Compare local and remote copy.
+  //Ideally, remote copies usually mean the latest and complete version
+  //IDs that no longer exist in the remote copy should be removed from the local
 
-    // if (localList.length < remoteList.length) {
     for (final remoteItem in remoteList) {
       await _localStorage.insertDataIntoTable(_tableName, remoteItem);
     }
-    // } else {
     for (final localItem in localList) {
       for (final remoteItem in remoteList) {
         if (localItem.id == remoteItem.id) {
           remoteItem.status = localItem
-              .status; //Assuming this is the change the user has made to this item while offline.
+              .status; //Assuming this is as one of the change the user has made to this item while offline.
           itemsToRemove.remove(localItem);
           await _localStorage.updateDataInTable(_tableName, remoteItem);
           break;
@@ -105,6 +112,8 @@ class TaskSyncManager {
       }
     }
 
+    //Remove the IDs that can no longer be found in the remote list 
+    //Also remove the IDs if they are actually due for update to server. 
     for (final removeItem in itemsToRemove) {
       await _localStorage.removeDataFromTable(_tableName, removeItem);
 
@@ -112,13 +121,12 @@ class TaskSyncManager {
         _pendingSyncList.remove(removeItem.id);
       }
     }
-    // }
 
     _isSyncing = false;
-    print("HOLD UP");
 
     return Future.value();
   }
+
 
   Future<void> updateTask(TaskModel task) async {
     await _localStorage.updateDataInTable(_tableName, task);
@@ -127,14 +135,16 @@ class TaskSyncManager {
     final hasConnection =
         await ConnectivityClass.checkIfHasInternetConnection();
 
+    //Check for connection, if no connection then throw into a pending list. 
+    //else, directly make the change to server. 
     if (hasConnection) {
       updateTaskToRemote(task);
     } else {
       _pendingSyncList.add(task.id);
 
+      //Update to player prefs (in case the device crashes or if user kills the app)
       final sharedPrefs = await SharedPreferences.getInstance();
       sharedPrefs.setStringList(_pendingUpdatesName, _pendingSyncList);
-      //shared prefs save here
     }
   }
 
@@ -152,6 +162,7 @@ class TaskSyncManager {
     sharedPrefs.setStringList(_pendingUpdatesName, _pendingSyncList);
   }
 
+  ///Call API to update task status.
   Future<void> updateTaskToRemote(TaskModel task) async {
     //call API
     final urlString = apiconstants.baseURL + "tasks/${task.id}";
@@ -163,9 +174,9 @@ class TaskSyncManager {
 
     print(response.body);
     final responseData = json.decode(response.body) as Map<String, dynamic>;
-    final taskObjResponse = TaskModel.fromMap(responseData);
   }
 
+  ///Clear local storage (clean reset of things) 
   Future<void> clearLocalTaskStorage() async {
     await _localStorage.clearTable(_tableName);
     final sharedPrefs = await SharedPreferences.getInstance();
@@ -176,8 +187,8 @@ class TaskSyncManager {
   Future<void> reloadAndResync() async {
     print("reload and resync");
 
-//If got internet, call API
-//If no internet, ignore, use local copy first.
+  //If got internet, call API
+  //If no internet, ignore, use local copy first.
     if (await ConnectivityClass.checkIfHasInternetConnection()) {
       await loadRemoteTaskList().then((value) => checkAnyPendingToUpdate());
       //TODO: Check if got any pending tasks to update.
@@ -186,11 +197,14 @@ class TaskSyncManager {
   }
 
   //Background task
+
+  ///To stop background task scheduling
   void stopSyncInBackground() async {
     await BackgroundWorkHandler().unregisterBackgroundTask();
     print("cancelled background task sync?");
   }
 
+///To start background task scheduling
   void runSyncInBackground() {
     BackgroundWorkHandler().registerBackgroundTask(() async {
       print("background task sync?");

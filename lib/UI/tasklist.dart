@@ -10,6 +10,7 @@ import '../helpers/tasksyncmanager.dart';
 
 import 'taskdetails.dart';
 
+///Stateful widget for displaying the task list (the first page when the app starts)
 class TaskList extends StatefulWidget {
   const TaskList({Key? key}) : super(key: key);
 
@@ -19,7 +20,6 @@ class TaskList extends StatefulWidget {
 
 class _TaskListState extends State<TaskList> with WidgetsBindingObserver {
   final _taskList = <TaskModel>[];
-  final _localStorage = LocalStorageHandler();
 
   @override
   void initState() {
@@ -42,8 +42,10 @@ class _TaskListState extends State<TaskList> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    //Observe, if going into background, schedule background task
+    //Else, if in foreground, run timer to pull data every x minutes
     if (state == AppLifecycleState.resumed) {
-      print("back from background desu");
+      print("back from background");
       TaskSyncManager().stopSyncInBackground();
       _loadData();
       runTimerToSync();
@@ -98,45 +100,6 @@ class _TaskListState extends State<TaskList> with WidgetsBindingObserver {
     );
   }
 
-  Timer? foregroundSyncTimer;
-
-  void runTimerToSync() {
-    if (foregroundSyncTimer != null) {
-      return;
-    }
-
-    foregroundSyncTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
-      _reloadData();
-    });
-  }
-
-  void stopTimerToSync() {
-    if (foregroundSyncTimer != null) {
-      foregroundSyncTimer!.cancel();
-      foregroundSyncTimer = null;
-    }
-  }
-
-  void _reloadData() async {
-    stopTimerToSync();
-    await TaskSyncManager().reloadAndResync().then((value) => _loadData());
-    runTimerToSync();
-  }
-
-  void _loadData() {
-    _taskList.clear();
-    setState(() {
-      _taskList.addAll(TaskSyncManager().localTaskList);
-    });
-  }
-
-  void _clearData() async {
-    stopTimerToSync();
-    await TaskSyncManager()
-        .clearLocalTaskStorage()
-        .then((value) => _reloadData());
-  }
-
   Widget _buildTaskRow(int pos) {
     return Padding(
         padding: const EdgeInsets.only(
@@ -162,5 +125,46 @@ class _TaskListState extends State<TaskList> with WidgetsBindingObserver {
                 .then((value) => _loadData());
           },
         ));
+  }
+
+//Timer that runs when polling for data
+  Timer? foregroundSyncTimer;
+
+  void runTimerToSync() {
+    if (foregroundSyncTimer != null) {
+      return;
+    }
+
+    foregroundSyncTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _reloadData();
+    });
+  }
+
+  void stopTimerToSync() {
+    if (foregroundSyncTimer != null) {
+      foregroundSyncTimer!.cancel();
+      foregroundSyncTimer = null;
+    }
+  }
+
+//Data loading
+  void _reloadData() async {
+    stopTimerToSync();
+    await TaskSyncManager().reloadAndResync().then((value) => _loadData());
+    runTimerToSync();
+  }
+
+  void _loadData() {
+    _taskList.clear();
+    setState(() {
+      _taskList.addAll(TaskSyncManager().localTaskList);
+    });
+  }
+
+  void _clearData() async {
+    stopTimerToSync();
+    await TaskSyncManager()
+        .clearLocalTaskStorage()
+        .then((value) => _reloadData());
   }
 }

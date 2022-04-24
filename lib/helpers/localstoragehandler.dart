@@ -3,7 +3,14 @@ import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:path/path.dart' as path;
 import 'package:flutter/widgets.dart';
 
+///Class that manages local storage via SQL (Not to be confused with SharedPreferences / NSUserDefaults)
+///
+///This class is made into a singleton and interacts with the sqflite package to deal with 
+///locally storage. Contains methods to initialise, add, update and delete records.
+///For this POC, the create table method is a little hardcoded to create a table that caters
+///to storing the TaskModel. 
 class LocalStorageHandler {
+
   static final LocalStorageHandler _instance = LocalStorageHandler._internal();
   late sqflite.Database _database;
   bool _isDBInitialised = false;
@@ -14,22 +21,27 @@ class LocalStorageHandler {
 
   LocalStorageHandler._internal();
 
+///Initialise database
   Future<void> initialiseDatabase() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     final db = await sqflite
         .openDatabase(path.join(await sqflite.getDatabasesPath(), 'tasks_db'),
             onCreate: ((db, version) {
-      print("Database created, version is: $version");
+      // print("Database created, version is: $version");
       return;
     }), onConfigure: (database) {
-      print("Database opened");
+      // print("Database opened");
       _database = database;
       _isDBInitialised = true;
       return;
     }, version: 1);
   }
 
+///Initialise table. 
+///
+///Despite the parameters, this function presently is hardcoded to create a table based on 
+///the TaskModel class. 
   Future<void> initialiseTable(String tableName) async {
     if (!_isDBInitialised) {
       print("Warning: " +
@@ -49,6 +61,7 @@ class LocalStorageHandler {
     });
   }
 
+///Get data from the tablename provided in the param.
   Future<List<TaskModel>> getDataFromTable(String tableName) async {
     if (!_isDBInitialised) {
       print("Warning: " +
@@ -65,6 +78,7 @@ class LocalStorageHandler {
     });
   }
 
+///Insert data into the table.
   Future<void> insertDataIntoTable(
       String tableName, TaskModel taskModel) async {
     if (!_isDBInitialised) {
@@ -85,6 +99,7 @@ class LocalStorageHandler {
     print("INSERT: $affected rows affected");
   }
 
+///Update data in table with the new details.
   Future<void> updateDataInTable(String tableName, TaskModel taskModel) async {
     if (!_isDBInitialised) {
       print("Warning: " +
@@ -104,6 +119,7 @@ class LocalStorageHandler {
     print("UPDATE: $affected rows affected");
   }
 
+///To remove data from the table
   Future<void> removeDataFromTable(
       String tableName, TaskModel taskModel) async {
     if (!_isDBInitialised) {
@@ -124,6 +140,7 @@ class LocalStorageHandler {
     print("DELETE: $affected rows affected");
   }
 
+//To completely clear the table.
   Future<void> clearTable(String tableName) async {
     if (!_isDBInitialised) {
       print("Warning: " +

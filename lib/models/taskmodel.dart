@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+///Class describing the structure of objects holding each tasks
 class TaskModel {
   late String id;
   late String title;
@@ -7,8 +8,6 @@ class TaskModel {
   late int status;
   late int assigneeId;
   late bool isCompleted;
-
-  late bool isNewUpdate = false;
 
   TaskModel(
       {required this.id,
