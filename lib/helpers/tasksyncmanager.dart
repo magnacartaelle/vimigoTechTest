@@ -93,9 +93,9 @@ class TaskSyncManager {
     final itemsToRemove = <TaskModel>[];
     itemsToRemove.addAll(localList);
 
-  //Compare local and remote copy.
-  //Ideally, remote copies usually mean the latest and complete version
-  //IDs that no longer exist in the remote copy should be removed from the local
+    //Compare local and remote copy.
+    //Ideally, remote copies usually mean the latest and complete version
+    //IDs that no longer exist in the remote copy should be removed from the local
 
     for (final remoteItem in remoteList) {
       await _localStorage.insertDataIntoTable(_tableName, remoteItem);
@@ -112,8 +112,8 @@ class TaskSyncManager {
       }
     }
 
-    //Remove the IDs that can no longer be found in the remote list 
-    //Also remove the IDs if they are actually due for update to server. 
+    //Remove the IDs that can no longer be found in the remote list
+    //Also remove the IDs if they are actually due for update to server.
     for (final removeItem in itemsToRemove) {
       await _localStorage.removeDataFromTable(_tableName, removeItem);
 
@@ -127,7 +127,6 @@ class TaskSyncManager {
     return Future.value();
   }
 
-
   Future<void> updateTask(TaskModel task) async {
     await _localStorage.updateDataInTable(_tableName, task);
     getTaskList();
@@ -135,8 +134,8 @@ class TaskSyncManager {
     final hasConnection =
         await ConnectivityClass.checkIfHasInternetConnection();
 
-    //Check for connection, if no connection then throw into a pending list. 
-    //else, directly make the change to server. 
+    //Check for connection, if no connection then throw into a pending list.
+    //else, directly make the change to server.
     if (hasConnection) {
       updateTaskToRemote(task);
     } else {
@@ -176,9 +175,11 @@ class TaskSyncManager {
     final responseData = json.decode(response.body) as Map<String, dynamic>;
   }
 
-  ///Clear local storage (clean reset of things) 
+  ///Clear local storage (clean reset of things)
   Future<void> clearLocalTaskStorage() async {
     await _localStorage.clearTable(_tableName);
+
+    _pendingSyncList.clear();
     final sharedPrefs = await SharedPreferences.getInstance();
     sharedPrefs.remove(_pendingUpdatesName);
     return;
@@ -187,8 +188,8 @@ class TaskSyncManager {
   Future<void> reloadAndResync() async {
     print("reload and resync");
 
-  //If got internet, call API
-  //If no internet, ignore, use local copy first.
+    //If got internet, call API
+    //If no internet, ignore, use local copy first.
     if (await ConnectivityClass.checkIfHasInternetConnection()) {
       await loadRemoteTaskList().then((value) => checkAnyPendingToUpdate());
       //TODO: Check if got any pending tasks to update.
@@ -204,7 +205,7 @@ class TaskSyncManager {
     print("cancelled background task sync?");
   }
 
-///To start background task scheduling
+  ///To start background task scheduling
   void runSyncInBackground() {
     BackgroundWorkHandler().registerBackgroundTask(() async {
       print("background task sync?");
